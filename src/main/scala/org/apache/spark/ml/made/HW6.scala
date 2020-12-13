@@ -11,12 +11,12 @@ object HW6 extends App {
     val rand = new Random(0)
     /////////////////////////////////////////////////////////////////////////////////////////
     var elems1: Vector = Vectors.dense(1, 0, 1)
-    var elems2: Vector = Vectors.dense(1, 1, 0)
+    var elems2: Vector = Vectors.dense(0, 1, 0)
 
     val randUnitVectors: Array[Vector] = {
-      Array.fill(2000) {
-        val randArray = Array.fill(3)(rand.nextGaussian())
-        Vectors.fromBreeze(normalize(breeze.linalg.Vector(randArray)))
+      Array.fill(5) {
+        val randArray = Array.fill(3)((rand.nextInt(2)*2-1).toDouble)
+        Vectors.fromBreeze((breeze.linalg.Vector(randArray)))
       }
     }
     println("Randunitvecc")
