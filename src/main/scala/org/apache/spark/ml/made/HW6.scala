@@ -10,8 +10,8 @@ object HW6 extends App {
 
     val rand = new Random(0)
     /////////////////////////////////////////////////////////////////////////////////////////
-    var elems1: Vector = Vectors.dense(1, 2, 3)
-    var elems2: Vector = Vectors.dense(1, 2, 3)
+    var elems1: Vector = Vectors.dense(1, 0, 1)
+    var elems2: Vector = Vectors.dense(1, 1, 0)
 
     val randUnitVectors: Array[Vector] = {
       Array.fill(2000) {
