@@ -11,10 +11,10 @@ object HW6 extends App {
     val rand = new Random(0)
     /////////////////////////////////////////////////////////////////////////////////////////
     var elems1: Vector = Vectors.dense(1, 2, 3)
-    var elems2: Vector = Vectors.dense(0, 1, 0)
+    var elems2: Vector = Vectors.dense(1, 2, 3)
 
     val randUnitVectors: Array[Vector] = {
-      Array.fill(10) {
+      Array.fill(2000) {
         val randArray = Array.fill(3)(rand.nextGaussian())
         Vectors.fromBreeze(normalize(breeze.linalg.Vector(randArray)))
       }
@@ -43,9 +43,8 @@ object HW6 extends App {
     println("distance")
     println(distance)
 
-    val result  = x1.zip(y1).map(vectorPair => Vectors.sqdist(vectorPair._1, vectorPair._2))
 
-    println(result.sum.toDouble/result.length)
+    println(distance.sum.toDouble/distance.length)
 
   }
 }
