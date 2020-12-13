@@ -13,6 +13,10 @@ import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
+/// Я так и не понял, как мы можем генерировать вектора из 1 и -1, плоскость задается вектором нормали
+// то по какую сторону вектор от плоскости определяется знаком скалярного произведения нормали и вектора
+// вот знаки это действительно -1 и 1
+
 
 @Since("2.1.0")
 class CosineLSHModel private[ml](
