@@ -102,7 +102,7 @@ class CosineLSH(override val uid: String)
     val rand = new Random($(seed))
     val randUnitVectors: Array[Vector] = {
       Array.fill($(numHashTables)) {
-        val randArray = Array.fill(inputDim)((rand.nextInt()*2-1).toDouble)
+        val randArray = Array.fill(inputDim)((rand.nextInt(2)*2-1).toDouble)
         Vectors.fromBreeze(normalize(breeze.linalg.Vector(randArray)))
       }
     }
