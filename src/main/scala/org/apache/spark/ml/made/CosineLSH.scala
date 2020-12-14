@@ -43,7 +43,7 @@ class CosineLSHModel private[ml](
 
   @Since("2.1.0")
   override protected[ml] def keyDistance(x: Vector, y: Vector): Double = {
-    Math.acos(BLAS.dot(x, y)/ Vectors.norm(x,2) * Vectors.norm(y,2))/Math.PI
+    Math.acos(BLAS.dot(x, y)/ Vectors.norm(x,2) * Vectors.norm(y,2))*2/Math.PI
   }
 
   @Since("2.1.0")
