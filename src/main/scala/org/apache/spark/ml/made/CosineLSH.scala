@@ -45,8 +45,7 @@ class CosineLSHModel private[ml](
 
   @Since("2.1.0")
   override protected[ml] def keyDistance(x: Vector, y: Vector): Double = {
-    var cos = BLAS.dot(x, y)/ (Vectors.norm(x,2) * Vectors.norm(y,2))
-    cos = max(min(cos,1.0),-1.0)
+    val cos = max(min(BLAS.dot(x, y)/ (Vectors.norm(x,2) * Vectors.norm(y,2)),1.0),-1.0)
     Math.acos(cos)/Math.PI
   }
 
