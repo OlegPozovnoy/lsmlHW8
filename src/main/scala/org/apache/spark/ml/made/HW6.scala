@@ -1,50 +1,94 @@
 package org.apache.spark.ml.made
 
 import breeze.linalg.normalize
+import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.feature.{HashingTF, IDF, RegexTokenizer}
 import org.apache.spark.ml.linalg.{BLAS, Vector, Vectors}
-
-import scala.util.Random
+import org.apache.spark.sql.{SparkSession, functions}
+import org.apache.spark.sql.functions.{col, lit, monotonically_increasing_id}
 
 object HW6 extends App {
   override def main(args: Array[String]): Unit = {
 
-    val rand = new Random(0)
-    /////////////////////////////////////////////////////////////////////////////////////////
-    var elems1: Vector = Vectors.dense(1, 0, 1)
-    var elems2: Vector = Vectors.dense(0, 1, 0)
+    val spark = SparkSession.builder()
+      .master("local[2]")
+      .appName("made-demo")
+      .getOrCreate()
 
-    val randUnitVectors: Array[Vector] = {
-      Array.fill(5) {
-        val randArray = Array.fill(3)((rand.nextInt(2)*2-1).toDouble)
-        Vectors.fromBreeze((breeze.linalg.Vector(randArray)))
-      }
-    }
-    println("Randunitvecc")
-    println(randUnitVectors.deep.mkString("\n"))
+    import spark.implicits._
 
-    var hashValues1 = randUnitVectors.map(
-      randUnitVector => Math.signum(BLAS.dot(elems1, randUnitVector)/ Vectors.norm(elems1,2) )
-    )
-
-    var hashValues2 = randUnitVectors.map(
-      randUnitVector =>Math.signum(BLAS.dot(elems2, randUnitVector)/ Vectors.norm(elems2,2) )
-    )
+    val df = spark.read
+      .option("inferSchema","true")
+      .option("header","true")
+      .csv("./tripadvisor_hotel_reviews.csv").sample(0.1)
 
 
-    var x1: Seq[Vector] = (hashValues1.map(Vectors.dense(_)))
-    var y1: Seq[Vector] = (hashValues2.map(Vectors.dense(_)))
+    df.show()
 
-    println("vectors")
-    println(x1)
-    println(y1)
+    val preprocessingPipe = new Pipeline()
+      .setStages(Array(
+        new RegexTokenizer()
+          .setInputCol("Review")
+          .setOutputCol("tokenized")
+          .setPattern("\\W+"),
+        new HashingTF()
+          .setInputCol("tokenized")
+          .setOutputCol("tf")
+          .setBinary(true)
+          .setNumFeatures(10000),
+        new HashingTF()
+          .setInputCol("tokenized")
+          .setOutputCol("tf2")
+          .setNumFeatures(10000),
+        new IDF()
+          .setInputCol("tf2")
+          .setOutputCol("tfidf")
+      ))
 
-    val distance  =  x1.zip(y1).map(vectorPair =>
-      vectorPair._1.toArray.zip(vectorPair._2.toArray).count(pair => pair._1 != pair._2))
-    println("distance")
-    println(distance)
+    val Array(train, test) = df.randomSplit(Array(0.8,0.2))
+
+    val pipe = preprocessingPipe.fit(train)
+
+    val trainFeatures = pipe.transform(train)
+    val testFeatures = pipe.transform(test)
+
+    trainFeatures.printSchema
+    print(trainFeatures.show(20))
+
+    val testFeaturesWithIndex = testFeatures.withColumn("id", monotonically_increasing_id()).cache()
+
+    testFeaturesWithIndex.show
+
+    import org.apache.spark.ml.evaluation.RegressionEvaluator
+
+    val metrics = new RegressionEvaluator()
+      .setLabelCol("Rating")
+      .setPredictionCol("predict")
+      .setMetricName("rmse")
+
+    val Cosine = new CosineLSH()
+      .setInputCol("tfidf")
+      .setOutputCol("brpBuckets")
+      .setNumHashTables(5)
+
+    val mhModel3 = Cosine.fit(trainFeatures)
+
+    trainFeatures.show
+
+    val eqlidNeigh3 = mhModel3.approxSimilarityJoin(trainFeatures, testFeaturesWithIndex,0.7)
+
+    eqlidNeigh3.count()
+    eqlidNeigh3.show()
 
 
-    println(distance.sum.toDouble/distance.length)
+    val predictions3 = eqlidNeigh3
+      .withColumn("similarity", lit(1) / (col("distCol") + lit(0.000001)))
+      .groupBy("datasetB.id")
+      .agg((functions.sum(col("similarity") *col("datasetA.Rating"))/ functions.sum(col("similarity"))).as("predict"))
+
+    val forMetric3 = testFeaturesWithIndex.join(predictions3, Seq("id"))
+
+    println(metrics.evaluate(forMetric3))
 
   }
 }
